@@ -1,0 +1,55 @@
+name: "Terraform deploy   OCI"
+
+on:
+    push:
+        branches:
+           - main
+
+jobs:
+    terraform:
+        name: "terraform aply"
+        runs-on: "ubuntu-latest"
+        steps:
+          - name: Checkout code
+            uses: actions/checkout@v3
+          - name: Setup Terraform
+            uses: hashicorp/setup-terraform@v2
+            with:
+                terraform_version: "1.7.6"
+          - name: Configurar credenciales
+            run : |
+                mkdir -p ~/.oci
+                echo "${{ secrets.OCI_API_KEY_PEM }}" > ~/.oci/oci_api_key.pem
+                chmod 600 ~/.oci/oci_api_key.pem
+
+          - name: Terraform Init
+            run : terraform init
+            
+          - name : Terraform Apply con intentos                       
+            run : |
+                for i in {1..5}; do
+                    echo "Intento $i de 5 de crear la instancia en OCI"
+                    if terraform apply --auto-aprove ; then
+                       echo "desplliegue realizado y exitoso"
+                       exit 0 
+                    fi 
+                       echo "oracle sin capacida de host esperando 15 segundos"
+                       sleep 15
+                done
+                echo "se agotaron los intentos"
+                exit 1
+            env:
+                TF_VAR_tenancy_ocid: "${{ secrets.TF_VAR_TENANCY_OCID }}"
+                TF_VAR_compartment_ocid: "${{ secrets.TF_VAR_COMPARTMENT_OCID }}"
+                TF_VAR_user_ocid: "${{ secrets.OCI_USER_OCID }}"
+                TF_VAR_subnet_ocid: "${{ secrets.TF_VAR_SUBNET_OCID }}"
+                TF_VAR_ubuntu_image_ocid: "${{ secrets.TF_VAR_UBUNTU_IMAGE_OCID }}"
+                TF_VAR_ssh_public_key: "${{ secrets.TF_VAR_SSH_PUBLIC_KEY }}"
+                TF_VAR_availability_domain: "${{ secrets.TF_VAR_AVAILABILITY_DOMAIN }}"
+                TF_VAR_fingerprint: "${{ secrets.OCI_FINGERPRINT }}"
+                TF_VAR_private_key_path: "/home/runner/.oci/oci_api_key.pem"
+                TF_VAR_region: "${{ secrets.TF_VAR_REGION }}"
+
+
+                                 
+

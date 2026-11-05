@@ -1,0 +1,13 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+
+# Claves privadas
+*.pem
+*.key
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
